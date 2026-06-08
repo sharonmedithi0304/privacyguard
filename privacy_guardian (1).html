@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>PrivacyGuard — Sensitive Data Protector</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --accent: #7c6af5;
+    --accent2: #4fc3a1;
+    --accent3: #f0516a;
+    --text: #f0eff8;
+    --text2: #9391a8;
+    --text3: #5e5c73;
+    --border: rgba(255,255,255,0.07);
+    --pill: rgba(124,106,245,0.12);
+    --pill-border: rgba(124,106,245,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; height:100%; overflow-x:hidden; }
+
+  /* SCREENS */
+  .screen { display:none; flex-direction:column; min-height:100vh; animation: fadeUp 0.45s ease forwards; }
+  .screen.active { display:flex; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+  /* NAV */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background: rgba(10,10,15,0.92); backdrop-filter:blur(20px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding: 10px 0 16px; z-index:100; }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--text3); cursor:pointer; padding:4px 16px; transition:color 0.2s; }
+  .nav-item.active { color:var(--accent); }
+  .nav-item svg { width:22px; height:22px; }
+
+  /* HOME / COVER */
+  #home { background: var(--bg); padding-bottom: 80px; }
+  .cover { position:relative; padding: 56px 24px 40px; overflow:hidden; }
+  .cover::before { content:''; position:absolute; top:-80px; right:-60px; width:280px; height:280px; background: radial-gradient(circle, rgba(124,106,245,0.18) 0%, transparent 70%); border-radius:50%; }
+  .cover::after { content:''; position:absolute; bottom:-40px; left:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(79,195,161,0.12) 0%, transparent 70%); border-radius:50%; }
+
+  .logo-row { display:flex; align-items:center; gap:12px; margin-bottom:32px; }
+  .logo-icon { width:42px; height:42px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius:12px; display:flex; align-items:center; justify-content:center; }
+  .logo-icon svg { width:22px; height:22px; color:#fff; }
+  .logo-name { font-family:'Syne', sans-serif; font-size:17px; font-weight:700; letter-spacing:-0.3px; }
+  .logo-name span { color: var(--accent); }
+
+  .cover-badge { display:inline-flex; align-items:center; gap:6px; background:var(--pill); border:1px solid var(--pill-border); border-radius:100px; padding:5px 14px; font-size:11px; color:var(--accent); font-weight:500; margin-bottom:18px; }
+  .cover-badge .dot { width:6px; height:6px; background:var(--accent2); border-radius:50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .cover h1 { font-family:'Syne', sans-serif; font-size:32px; font-weight:800; line-height:1.15; letter-spacing:-1px; margin-bottom:14px; }
+  .cover h1 em { font-style:normal; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .cover p { font-size:14px; color:var(--text2); line-height:1.7; max-width:300px; }
+
+  .stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:0 24px 28px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 12px; text-align:center; }
+  .stat-card .num { font-family:'Syne', sans-serif; font-size:20px; font-weight:800; color:var(--accent); }
+  .stat-card .lbl { font-size:10px; color:var(--text3); margin-top:3px; line-height:1.4; }
+
+  .section-label { padding: 0 24px 12px; font-size:11px; font-weight:500; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; }
+
+  /* QUICK ACTIONS */
+  .actions-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 24px 28px; }
+  .action-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px 16px; cursor:pointer; transition:transform 0.15s, border-color 0.2s; active:scale(0.97); }
+  .action-card:active { transform:scale(0.97); }
+  .action-card.wide { grid-column:span 2; display:flex; align-items:center; gap:14px; }
+  .action-card .icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .action-card.wide .icon { margin-bottom:0; flex-shrink:0; }
+  .action-card .icon svg { width:20px; height:20px; }
+  .action-card h3 { font-family:'Syne', sans-serif; font-size:13px; font-weight:700; margin-bottom:4px; }
+  .action-card p { font-size:11px; color:var(--text3); line-height:1.5; }
+  .action-card.wide p { font-size:12px; }
+  .ic-purple { background: rgba(124,106,245,0.15); color: var(--accent); }
+  .ic-teal { background: rgba(79,195,161,0.15); color: var(--accent2); }
+  .ic-red { background: rgba(240,81,106,0.15); color: var(--accent3); }
+  .ic-amber { background: rgba(245,176,68,0.15); color: #f5b044; }
+
+  /* Recent alerts */
+  .alert-list { padding: 0 24px 28px; display:flex; flex-direction:column; gap:10px; }
+  .alert-item { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; align-items:flex-start; gap:12px; }
+  .alert-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+  .dot-red { background:var(--accent3); box-shadow:0 0 8px var(--accent3); }
+  .dot-amber { background:#f5b044; box-shadow:0 0 8px #f5b044; }
+  .dot-green { background:var(--accent2); box-shadow:0 0 8px var(--accent2); }
+  .alert-item .at { font-size:12px; font-weight:500; margin-bottom:3px; }
+  .alert-item .as { font-size:11px; color:var(--text3); line-height:1.5; }
+  .alert-time { font-size:10px; color:var(--text3); margin-left:auto; flex-shrink:0; }
+
+  /* SCAN SCREEN */
+  #scan { padding: 56px 24px 100px; }
+  .screen-title { font-family:'Syne', sans-serif; font-size:22px; font-weight:800; margin-bottom:6px; }
+  .screen-sub { font-size:13px; color:var(--text2); margin-bottom:28px; line-height:1.6; }
+
+  .input-area { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px; margin-bottom:16px; }
+  .input-area label { font-size:11px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:10px; }
+  .input-area textarea { background:transparent; border:none; outline:none; color:var(--text); font-family:'DM Sans', sans-serif; font-size:14px; line-height:1.7; width:100%; resize:none; min-height:140px; }
+  .input-area textarea::placeholder { color:var(--text3); }
+
+  .scan-btn { width:100%; background:linear-gradient(135deg, var(--accent), #6054d4); border:none; border-radius:14px; padding:16px; color:#fff; font-family:'Syne', sans-serif; font-size:15px; font-weight:700; letter-spacing:0.3px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:opacity 0.2s, transform 0.15s; }
+  .scan-btn:active { transform:scale(0.98); opacity:0.9; }
+  .scan-btn svg { width:18px; height:18px; }
+
+  .result-box { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px; margin-top:16px; display:none; }
+  .result-box.show { display:block; animation: fadeUp 0.3s ease; }
+  .result-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .risk-badge { padding:4px 12px; border-radius:100px; font-size:11px; font-weight:700; font-family:'Syne', sans-serif; }
+  .risk-high { background:rgba(240,81,106,0.15); color:var(--accent3); border:1px solid rgba(240,81,106,0.3); }
+  .risk-med { background:rgba(245,176,68,0.15); color:#f5b044; border:1px solid rgba(245,176,68,0.3); }
+  .risk-low { background:rgba(79,195,161,0.15); color:var(--accent2); border:1px solid rgba(79,195,161,0.3); }
+  .result-title { font-family:'Syne', sans-serif; font-size:14px; font-weight:700; }
+
+  .found-list { display:flex; flex-direction:column; gap:8px; }
+  .found-item { background:var(--surface2); border-radius:10px; padding:12px; display:flex; align-items:center; gap:10px; }
+  .found-item .fi-type { font-size:10px; color:var(--accent); background:var(--pill); border:1px solid var(--pill-border); padding:2px 8px; border-radius:100px; flex-shrink:0; }
+  .found-item .fi-val { font-size:12px; font-family:'DM Mono', monospace; color:var(--text2); word-break:break-all; }
+  .redacted-text { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:12px; font-size:13px; line-height:1.8; color:var(--text2); }
+  .redacted-text .tag { background:rgba(240,81,106,0.2); color:var(--accent3); padding:1px 6px; border-radius:4px; font-size:12px; font-weight:500; }
+
+  /* DASHBOARD */
+  #dashboard { padding:56px 24px 100px; }
+  .dash-hero { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px; margin-bottom:20px; position:relative; overflow:hidden; }
+  .dash-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:150px; height:150px; background:radial-gradient(circle, rgba(124,106,245,0.15) 0%,transparent 70%); border-radius:50%; }
+  .dash-hero .dh-label { font-size:11px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .dash-hero .dh-num { font-family:'Syne', sans-serif; font-size:42px; font-weight:800; color:var(--accent); line-height:1; }
+  .dash-hero .dh-sub { font-size:12px; color:var(--text3); margin-top:6px; }
+
+  .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .dash-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; }
+  .dash-card .dc-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .dash-card .dc-icon svg { width:17px; height:17px; }
+  .dash-card .dc-num { font-family:'Syne', sans-serif; font-size:22px; font-weight:800; line-height:1; }
+  .dash-card .dc-lbl { font-size:11px; color:var(--text3); margin-top:4px; }
+
+  .bar-chart { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:20px; }
+  .bar-chart h4 { font-family:'Syne', sans-serif; font-size:13px; font-weight:700; margin-bottom:14px; }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .bar-row .br-label { font-size:11px; color:var(--text3); width:50px; flex-shrink:0; }
+  .bar-row .br-track { flex:1; height:8px; background:var(--surface2); border-radius:100px; overflow:hidden; }
+  .bar-row .br-fill { height:100%; border-radius:100px; transition:width 1s ease; }
+  .bar-row .br-val { font-size:11px; color:var(--text2); width:28px; text-align:right; flex-shrink:0; }
+
+  /* SETTINGS */
+  #settings { padding:56px 24px 100px; }
+  .settings-section { margin-bottom:24px; }
+  .settings-section h4 { font-family:'Syne', sans-serif; font-size:11px; font-weight:700; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+  .settings-list { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  .setting-row { display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .setting-row:last-child { border-bottom:none; }
+  .setting-row .sr-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-right:12px; flex-shrink:0; }
+  .setting-row .sr-icon svg { width:17px; height:17px; }
+  .setting-row .sr-info { flex:1; }
+  .setting-row .sr-info .sri-title { font-size:14px; font-weight:500; }
+  .setting-row .sr-info .sri-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+  .toggle { width:44px; height:26px; border-radius:100px; background:var(--surface2); border:1px solid var(--border); position:relative; cursor:pointer; transition:background 0.25s; flex-shrink:0; }
+  .toggle.on { background:var(--accent); border-color:var(--accent); }
+  .toggle::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform 0.25s; }
+  .toggle.on::after { transform:translateX(18px); }
+  .chevron { color:var(--text3); }
+  .chevron svg { width:16px; height:16px; }
+
+  .profile-card { background:linear-gradient(135deg, rgba(124,106,245,0.15), rgba(79,195,161,0.08)); border:1px solid var(--pill-border); border-radius:18px; padding:20px; margin-bottom:24px; display:flex; align-items:center; gap:14px; }
+  .avatar { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg, var(--accent), var(--accent2)); display:flex; align-items:center; justify-content:center; font-family:'Syne', sans-serif; font-size:20px; font-weight:800; color:#fff; flex-shrink:0; }
+  .profile-info .pi-name { font-family:'Syne', sans-serif; font-size:17px; font-weight:800; }
+  .profile-info .pi-plan { font-size:11px; color:var(--accent2); margin-top:3px; }
+  .profile-info .pi-scans { font-size:11px; color:var(--text3); margin-top:2px; }
+
+  .version-tag { text-align:center; font-size:11px; color:var(--text3); padding:8px; }
+
+  /* Loading animation */
+  .scanning-anim { display:none; flex-direction:column; align-items:center; padding:28px 0; gap:14px; }
+  .scanning-anim.show { display:flex; }
+  .scan-ring { width:60px; height:60px; border-radius:50%; border:2px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .scan-text { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div class="screen active" id="home">
+  <div class="cover">
+    <div class="logo-row">
+      <div class="logo-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">Privacy<span>Guard</span></div>
+        <div style="font-size:10px; color:var(--text3); margin-top:1px;">Sensitive Data Protector</div>
+      </div>
+    </div>
+    <div class="cover-badge"><div class="dot"></div>Protection Active</div>
+    <h1>Your data stays<br/><em>your data.</em></h1>
+    <p style="margin-top:10px;">Detects and redacts PII, credentials, and sensitive identifiers before they leave your device.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="num">1.2K</div><div class="lbl">Texts scanned</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--accent3);">48</div><div class="lbl">Risks blocked</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--accent2);">99%</div><div class="lbl">Accuracy</div></div>
+  </div>
+
+  <div class="section-label">Quick actions</div>
+  <div class="actions-grid">
+    <div class="action-card" onclick="showScreen('scan')">
+      <div class="icon ic-purple">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803M10.5 7.5v6m3-3h-6"/></svg>
+      </div>
+      <h3>Scan Text</h3>
+      <p>Paste any message or document to scan</p>
+    </div>
+    <div class="action-card" onclick="showScreen('dashboard')">
+      <div class="icon ic-teal">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      </div>
+      <h3>Dashboard</h3>
+      <p>View redaction stats and history</p>
+    </div>
+    <div class="action-card wide" onclick="showScreen('scan')">
+      <div class="icon ic-red">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+      </div>
+      <div>
+        <h3>Live API Proxy</h3>
+        <p>Route your LLM API calls through PrivacyGuard before data leaves your device</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Recent alerts</div>
+  <div class="alert-list">
+    <div class="alert-item">
+      <div class="alert-dot dot-red"></div>
+      <div>
+        <div class="at">Email address detected</div>
+        <div class="as">Found in message to ChatGPT — redacted before send</div>
+      </div>
+      <div class="alert-time">2m ago</div>
+    </div>
+    <div class="alert-item">
+      <div class="alert-dot dot-amber"></div>
+      <div>
+        <div class="at">Phone number masked</div>
+        <div class="as">+91 98XX XXXX12 replaced with [PHONE]</div>
+      </div>
+      <div class="alert-time">1h ago</div>
+    </div>
+    <div class="alert-item">
+      <div class="alert-dot dot-green"></div>
+      <div>
+        <div class="at">Scan clean</div>
+        <div class="as">No sensitive data found in last document</div>
+      </div>
+      <div class="alert-time">3h ago</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN SCREEN -->
+<div class="screen" id="scan">
+  <div class="screen-title">Scan & Redact</div>
+  <div class="screen-sub">Paste any text below — emails, messages, documents. PrivacyGuard will find and redact all sensitive data.</div>
+
+  <div class="input-area">
+    <label>Input text</label>
+    <textarea id="inputText" placeholder="e.g. Hi, my name is Priya Sharma. Reach me at priya@gmail.com or +91-9876543210. My Aadhaar is 1234 5678 9012..."></textarea>
+  </div>
+
+  <button class="scan-btn" onclick="runScan()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803"/></svg>
+    Scan for Sensitive Data
+  </button>
+
+  <div class="scanning-anim" id="scanAnim">
+    <div class="scan-ring"></div>
+    <div class="scan-text">Analyzing text patterns...</div>
+  </div>
+
+  <div class="result-box" id="resultBox">
+    <div class="result-header">
+      <div class="risk-badge" id="riskBadge">HIGH RISK</div>
+      <div class="result-title" id="resultTitle">4 sensitive items found</div>
+    </div>
+    <div style="font-size:11px; color:var(--text3); margin-bottom:14px; letter-spacing:1px; text-transform:uppercase;">Detected entities</div>
+    <div class="found-list" id="foundList"></div>
+    <div style="font-size:11px; color:var(--text3); margin:16px 0 10px; letter-spacing:1px; text-transform:uppercase;">Redacted output</div>
+    <div class="redacted-text" id="redactedText"></div>
+    <button class="scan-btn" style="margin-top:14px; background:linear-gradient(135deg, var(--accent2), #2d9e7a);" onclick="copyRedacted()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+      Copy Safe Text
+    </button>
+  </div>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div class="screen" id="dashboard">
+  <div class="screen-title">Dashboard</div>
+  <div class="screen-sub" style="margin-bottom:20px;">Your redaction activity and privacy health at a glance.</div>
+
+  <div class="dash-hero">
+    <div class="dh-label">Total data points protected</div>
+    <div class="dh-num">1,248</div>
+    <div class="dh-sub">↑ 34 more than last week</div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dc-icon ic-red"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 10-2.636 6.364M16.5 12V8.25"/></svg></div>
+      <div class="dc-num" style="color:var(--accent3);">312</div>
+      <div class="dc-lbl">Emails blocked</div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon ic-amber"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg></div>
+      <div class="dc-num" style="color:#f5b044;">189</div>
+      <div class="dc-lbl">Phones masked</div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon ic-purple"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"/></svg></div>
+      <div class="dc-num" style="color:var(--accent);">94</div>
+      <div class="dc-lbl">IDs redacted</div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon ic-teal"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg></div>
+      <div class="dc-num" style="color:var(--accent2);">47</div>
+      <div class="dc-lbl">Tokens/keys caught</div>
+    </div>
+  </div>
+
+  <div class="bar-chart">
+    <h4>Entity types this week</h4>
+    <div class="bar-row">
+      <div class="br-label">Email</div>
+      <div class="br-track"><div class="br-fill" style="width:78%; background:var(--accent3);"></div></div>
+      <div class="br-val">78</div>
+    </div>
+    <div class="bar-row">
+      <div class="br-label">Phone</div>
+      <div class="br-track"><div class="br-fill" style="width:55%; background:#f5b044;"></div></div>
+      <div class="br-val">55</div>
+    </div>
+    <div class="bar-row">
+      <div class="br-label">Aadhaar</div>
+      <div class="br-track"><div class="br-fill" style="width:32%; background:var(--accent);"></div></div>
+      <div class="br-val">32</div>
+    </div>
+    <div class="bar-row">
+      <div class="br-label">API Key</div>
+      <div class="br-track"><div class="br-fill" style="width:20%; background:var(--accent2);"></div></div>
+      <div class="br-val">20</div>
+    </div>
+    <div class="bar-row">
+      <div class="br-label">PAN</div>
+      <div class="br-track"><div class="br-fill" style="width:15%; background:#a78bfa;"></div></div>
+      <div class="br-val">15</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div class="screen" id="settings">
+  <div class="profile-card">
+    <div class="avatar">BV</div>
+    <div class="profile-info">
+      <div class="pi-name">Blessy</div>
+      <div class="pi-plan">✦ Pro Plan — Active</div>
+      <div class="pi-scans">1,248 scans this month</div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h4>Protection rules</h4>
+    <div class="settings-list">
+      <div class="setting-row">
+        <div class="sr-icon ic-red"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 10-2.636 6.364M16.5 12V8.25"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Email addresses</div><div class="sri-sub">Redact all email IDs</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="sr-icon ic-amber"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Phone numbers</div><div class="sri-sub">Indian & international formats</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="sr-icon ic-purple"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Aadhaar / PAN / ID</div><div class="sri-sub">Detect Indian govt identifiers</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="sr-icon ic-teal"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg></div>
+        <div class="sr-info"><div class="sri-title">API keys & tokens</div><div class="sri-sub">Secrets, bearer tokens, JWTs</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="sr-icon ic-red"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Credit card numbers</div><div class="sri-sub">All major card formats</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h4>App settings</h4>
+    <div class="settings-list">
+      <div class="setting-row">
+        <div class="sr-icon ic-purple"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Audit log</div><div class="sri-sub">Keep record of all scans</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="sr-icon ic-teal"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg></div>
+        <div class="sr-info"><div class="sri-title">Real-time alerts</div><div class="sri-sub">Notify on every detection</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="version-tag">PrivacyGuard v1.0.0 — CyberFest 2026</div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="showScreen('home')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+    Home
+  </div>
+  <div class="nav-item" id="nav-scan" onclick="showScreen('scan')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803M10.5 7.5v6m3-3h-6"/></svg>
+    Scan
+  </div>
+  <div class="nav-item" id="nav-dashboard" onclick="showScreen('dashboard')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+    Stats
+  </div>
+  <div class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    Settings
+  </div>
+</nav>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+const patterns = [
+  { type: 'EMAIL', regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, tag: '[EMAIL]' },
+  { type: 'PHONE', regex: /(\+91[-\s]?)?[6-9]\d{9}|\+\d{1,3}[-\s]?\d{6,12}/g, tag: '[PHONE]' },
+  { type: 'AADHAAR', regex: /\d{4}\s?\d{4}\s?\d{4}/g, tag: '[AADHAAR]' },
+  { type: 'PAN', regex: /[A-Z]{5}\d{4}[A-Z]/g, tag: '[PAN]' },
+  { type: 'API_KEY', regex: /sk-[a-zA-Z0-9]{20,}|Bearer\s+[a-zA-Z0-9._-]{20,}/g, tag: '[API_KEY]' },
+  { type: 'CREDIT_CARD', regex: /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, tag: '[CARD]' },
+  { type: 'IP_ADDRESS', regex: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, tag: '[IP]' },
+];
+
+function runScan() {
+  const text = document.getElementById('inputText').value.trim();
+  if (!text) return;
+  document.getElementById('resultBox').classList.remove('show');
+  document.getElementById('scanAnim').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('scanAnim').classList.remove('show');
+    const found = [];
+    let redacted = text;
+    patterns.forEach(p => {
+      const matches = [...new Set(text.match(p.regex) || [])];
+      matches.forEach(m => { found.push({ type: p.type, val: m }); redacted = redacted.split(m).join('<span class="tag">' + p.tag + '</span>'); });
+    });
+    const box = document.getElementById('resultBox');
+    const badge = document.getElementById('riskBadge');
+    const title = document.getElementById('resultTitle');
+    const list = document.getElementById('foundList');
+    const out = document.getElementById('redactedText');
+    if (found.length === 0) {
+      badge.className = 'risk-badge risk-low'; badge.textContent = 'CLEAN';
+      title.textContent = 'No sensitive data found';
+      list.innerHTML = '<div style="font-size:13px; color:var(--accent2); padding:8px 0;">✓ Text is safe to share</div>';
+      out.innerHTML = text;
+    } else {
+      const risk = found.length > 3 ? 'HIGH' : found.length > 1 ? 'MEDIUM' : 'LOW';
+      badge.className = 'risk-badge ' + (risk==='HIGH'?'risk-high':risk==='MEDIUM'?'risk-med':'risk-low');
+      badge.textContent = risk + ' RISK';
+      title.textContent = found.length + ' sensitive item' + (found.length>1?'s':'') + ' found';
+      list.innerHTML = found.map(f => `<div class="found-item"><span class="fi-type">${f.type}</span><span class="fi-val">${f.val}</span></div>`).join('');
+      out.innerHTML = redacted;
+    }
+    box.classList.add('show');
+  }, 1600);
+}
+
+function copyRedacted() {
+  const text = document.getElementById('redactedText').innerText;
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const btn = event.target.closest('button');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Copied!';
+  setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+</script>
+</body>
+</html>
